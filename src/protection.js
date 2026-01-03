@@ -1,12 +1,11 @@
 // ============================================================
-// 🛡️ PROTECTION MODULE v4.0.0 - FULL SECURITY
-// Anti-Debug, Anti-Dump, Anti-Decompile, Anti-Tamper, Tool Detection
+// 🛡️ PROTECTION MODULE v4.3.0 - FIXED (Less False Positives)
 // ============================================================
 
 const crypto = require('crypto');
 
 function randomVar(prefix = '_') {
-    return prefix + crypto.randomBytes(6).toString('hex');
+    return prefix + crypto.randomBytes(4).toString('hex');
 }
 
 function generateChecksum(script) {
@@ -24,47 +23,407 @@ function generateProtectedScript(originalScript, options = {}) {
         clientIP = 'unknown',
         hwid = null,
         playerId = null,
-        webhookUrl = null,
-        banEndpoint = null
+        banEndpoint = ''
     } = options;
 
     // Generate unique variable names
     const v = {
         main: randomVar('_M'),
-        security: randomVar('_S'),
         tools: randomVar('_T'),
         detect: randomVar('_D'),
         kick: randomVar('_K'),
-        ban: randomVar('_B'),
         exec: randomVar('_E'),
         decode: randomVar('_DC'),
-        verify: randomVar('_V'),
-        guard: randomVar('_G'),
-        check: randomVar('_C'),
-        run: randomVar('_R'),
-        http: randomVar('_H'),
-        player: randomVar('_P'),
         chunks: randomVar('_CH'),
-        antiDbg: randomVar('_AD'),
-        antiDmp: randomVar('_AM'),
-        antiDec: randomVar('_AC'),
-        antiTmp: randomVar('_AT'),
-        env: randomVar('_EN'),
-        data: randomVar('_DT'),
-        result: randomVar('_RS'),
-        loop: randomVar('_LP'),
+        http: randomVar('_H'),
         hwid: randomVar('_HW'),
-        session: randomVar('_SS'),
+        loop: randomVar('_LP'),
+        run: randomVar('_R'),
+        gui: randomVar('_G'),
+        check: randomVar('_C'),
     };
 
-    const checksum = generateChecksum(originalScript);
-    
     // Encode script to chunks
     const scriptChunks = [];
     const chunkSize = 400;
     for (let i = 0; i < originalScript.length; i += chunkSize) {
         const chunk = originalScript.substring(i, i + chunkSize);
         const encoded = Buffer.from(chunk).toString('base64');
+        scriptChunks.push(encoded);
+    }
+
+    const protectedScript = `
+--[[
+    🛡️ Protected Script v4.3
+    Less aggressive detection - only real tools
+]]
+
+local ${v.main} = (function()
+    -- Core references
+    local game = game
+    local pcall = pcall
+    local type = type
+    local typeof = typeof
+    local tostring = tostring
+    local table = table
+    local string = string
+    local tick = tick
+    local wait = task and task.wait or wait
+    local spawn = task and task.spawn or spawn
+    local pairs = pairs
+    local ipairs = ipairs
+    local loadstring = loadstring
+    local getfenv = getfenv
+    local rawget = rawget
+    
+    -- Services
+    local Players = game:GetService("Players")
+    local HttpService = game:GetService("HttpService")
+    local StarterGui = game:GetService("StarterGui")
+    local CoreGui = game:GetService("CoreGui")
+    local RunService = game:GetService("RunService")
+    
+    local LocalPlayer = Players.LocalPlayer
+    local BAN_ENDPOINT = "${banEndpoint}"
+    local HWID = nil
+    
+    -- ============================================================
+    -- 🔧 UTILITY FUNCTIONS
+    -- ============================================================
+    
+    -- Get HWID
+    local function ${v.hwid}()
+        if HWID then return HWID end
+        pcall(function()
+            HWID = (gethwid and gethwid()) or
+                   (get_hwid and get_hwid()) or
+                   (getexecutorname and getexecutorname() .. "_" .. tostring(LocalPlayer.UserId)) or
+                   (identifyexecutor and identifyexecutor() .. "_" .. tostring(LocalPlayer.UserId)) or
+                   ("EX_" .. tostring(LocalPlayer.UserId))
+        end)
+        return HWID or "UNKNOWN"
+    end
+    
+    -- HTTP Request
+    local function ${v.http}(url, data)
+        pcall(function()
+            local request = (syn and syn.request) or 
+                           (http and http.request) or 
+                           request or 
+                           (fluxus and fluxus.request) or 
+                           http_request
+            
+            if request then
+                request({
+                    Url = url,
+                    Method = "POST",
+                    Headers = {["Content-Type"] = "application/json"},
+                    Body = HttpService:JSONEncode(data)
+                })
+            end
+        end)
+    end
+    
+    -- Kick & Ban
+    local function ${v.kick}(reason, toolsFound)
+        -- Send ban to server
+        pcall(function()
+            if BAN_ENDPOINT and BAN_ENDPOINT ~= "" then
+                ${v.http}(BAN_ENDPOINT, {
+                    hwid = ${v.hwid}(),
+                    playerId = LocalPlayer.UserId,
+                    playerName = LocalPlayer.Name,
+                    reason = reason,
+                    toolsDetected = toolsFound or {}
+                })
+            end
+        end)
+        
+        -- Show notification
+        pcall(function()
+            StarterGui:SetCore("SendNotification", {
+                Title = "⛔ Security Violation",
+                Text = reason,
+                Duration = 5
+            })
+        end)
+        
+        wait(0.3)
+        
+        -- Kick player
+        pcall(function()
+            LocalPlayer:Kick("\\n⛔ SECURITY VIOLATION\\n\\n" .. reason .. "\\n\\nYou have been banned.")
+        end)
+    end
+    
+    -- ============================================================
+    -- 🔍 TOOL DETECTION - ONLY REAL TOOLS, NOT EXECUTOR FUNCTIONS
+    -- ============================================================
+    
+    local ${v.tools} = {
+        -- ✅ Only detect actual tool instances, NOT executor functions
+        _G_globals = {
+            -- Dex variants
+            "Dex", "DEX", "DexV2", "DexV3", "DexV4", 
+            "DexExplorer", "Dex_Explorer",
+            "DarkDex", "DarkDexV3", "Dark_Dex",
+            
+            -- Infinite Yield
+            "InfiniteYield", "Infinite_Yield", "IY_LOADED", "IY",
+            
+            -- Hydroxide
+            "Hydroxide", "HydroxideUI", "HYDROXIDE_LOADED",
+            
+            -- Spies
+            "SimpleSpy", "SimpleSpyExecuted", "SimpleSpy_Loaded",
+            "RemoteSpy", "Remote_Spy", "REMOTESPY_LOADED",
+            
+            -- Other tools
+            "BTool", "BTool_Loaded",
+            "F3X", "F3X_Loaded",
+            "UnnamedESP", "ESP_LOADED",
+            
+            -- Script dumpers (instances, not functions)
+            "ScriptDumper", "SCRIPTDUMP", "ScriptDump_Loaded",
+        },
+        
+        -- CoreGui/PlayerGui children to check
+        gui_names = {
+            "Dex", "DexV3", "DarkDex", "DarkDexV3",
+            "InfiniteYield", "IY", "Infinite Yield",
+            "Hydroxide", "SimpleSpy", "RemoteSpy",
+            "BTool", "F3X", "Unnamed ESP"
+        },
+        
+        -- Shared table indicators
+        shared_indicators = {
+            "IYPrefix", "InfiniteYield", "IY",
+            "Hydroxide", "SimpleSpy"
+        }
+    }
+    
+    local function ${v.detect}()
+        local detected = {}
+        
+        -- ✅ Check _G for TOOL INSTANCES (not functions)
+        for _, name in ipairs(${v.tools}._G_globals) do
+            pcall(function()
+                local val = rawget(_G, name)
+                -- Only flag if it's a table (tool instance) or true (loaded flag)
+                if val ~= nil then
+                    if type(val) == "table" or type(val) == "boolean" then
+                        table.insert(detected, name)
+                    end
+                end
+            end)
+        end
+        
+        -- ✅ Check getgenv for TOOL INSTANCES
+        pcall(function()
+            if getgenv then
+                local genv = getgenv()
+                for _, name in ipairs(${v.tools}._G_globals) do
+                    local val = rawget(genv, name)
+                    if val ~= nil then
+                        if type(val) == "table" or type(val) == "boolean" then
+                            if not table.find(detected, name) then
+                                table.insert(detected, name)
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+        
+        -- ✅ Check CoreGui for tool UIs (MOST RELIABLE)
+        pcall(function()
+            for _, guiName in ipairs(${v.tools}.gui_names) do
+                -- Direct children
+                if CoreGui:FindFirstChild(guiName) then
+                    local fullName = guiName .. "_UI"
+                    if not table.find(detected, fullName) then
+                        table.insert(detected, fullName)
+                    end
+                end
+                
+                -- Deep search
+                local found = CoreGui:FindFirstChild(guiName, true)
+                if found and found:IsA("ScreenGui") then
+                    local fullName = guiName .. "_GUI"
+                    if not table.find(detected, fullName) then
+                        table.insert(detected, fullName)
+                    end
+                end
+            end
+            
+            -- Check for suspicious ScreenGui with known patterns
+            for _, child in pairs(CoreGui:GetChildren()) do
+                if child:IsA("ScreenGui") then
+                    local name = child.Name:lower()
+                    -- Very specific patterns for known tools
+                    if name:match("^dex") or name:match("darkdex") or
+                       name == "infinite yield" or name == "iy" or
+                       name == "hydroxide" or name == "simplespy" or
+                       name == "remotespy" then
+                        if not table.find(detected, child.Name) then
+                            table.insert(detected, child.Name .. "_Detected")
+                        end
+                    end
+                end
+            end
+        end)
+        
+        -- ✅ Check PlayerGui
+        pcall(function()
+            if LocalPlayer and LocalPlayer.PlayerGui then
+                for _, guiName in ipairs(${v.tools}.gui_names) do
+                    if LocalPlayer.PlayerGui:FindFirstChild(guiName) or
+                       LocalPlayer.PlayerGui:FindFirstChild(guiName, true) then
+                        local fullName = guiName .. "_PlayerGUI"
+                        if not table.find(detected, fullName) then
+                            table.insert(detected, fullName)
+                        end
+                    end
+                end
+            end
+        end)
+        
+        -- ✅ Check shared table
+        pcall(function()
+            if shared then
+                for _, indicator in ipairs(${v.tools}.shared_indicators) do
+                    if shared[indicator] ~= nil then
+                        if not table.find(detected, indicator .. "_Shared") then
+                            table.insert(detected, indicator .. "_Shared")
+                        end
+                    end
+                end
+            end
+        end)
+        
+        return detected
+    end
+    
+    -- ============================================================
+    -- 🔓 SCRIPT DECODER
+    -- ============================================================
+    
+    local ${v.chunks} = {
+        ${scriptChunks.map((chunk, i) => `[${i + 1}] = "${chunk}"`).join(',\n        ')}
+    }
+    
+    local function ${v.decode}()
+        local decoded = {}
+        local b64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+        
+        for i, chunk in ipairs(${v.chunks}) do
+            pcall(function()
+                chunk = string.gsub(chunk, '[^'..b64..'=]', '')
+                decoded[i] = (chunk:gsub('.', function(x)
+                    if x == '=' then return '' end
+                    local r, f = '', (b64:find(x) - 1)
+                    for j = 6, 1, -1 do 
+                        r = r .. (f % 2^j - f % 2^(j-1) > 0 and '1' or '0') 
+                    end
+                    return r
+                end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(x)
+                    if #x ~= 8 then return '' end
+                    local c = 0
+                    for j = 1, 8 do 
+                        c = c + (x:sub(j,j) == '1' and 2^(8-j) or 0) 
+                    end
+                    return string.char(c)
+                end))
+            end)
+        end
+        
+        return table.concat(decoded)
+    end
+    
+    -- ============================================================
+    -- 🚀 MAIN EXECUTION
+    -- ============================================================
+    
+    local function ${v.run}()
+        -- Step 1: Tool Detection (ONLY REAL TOOLS)
+        local toolsFound = ${v.detect}()
+        
+        if #toolsFound > 0 then
+            local toolList = table.concat(toolsFound, ", ")
+            warn("[🛡️] Tools detected:", toolList)
+            ${v.kick}("Malicious tools detected: " .. toolList, toolsFound)
+            return false
+        end
+        
+        -- Step 2: Decode and execute script
+        local scriptContent = ${v.decode}()
+        
+        if scriptContent and #scriptContent > 0 then
+            local loader = loadstring or load
+            if not loader then
+                warn("[🛡️] Loader not available")
+                return false
+            end
+            
+            local fn, err = loader(scriptContent)
+            if not fn then
+                warn("[🛡️] Compile error:", err)
+                return false
+            end
+            
+            -- Execute
+            local success, result = pcall(fn)
+            if not success then
+                warn("[🛡️] Runtime error:", result)
+            end
+            
+            return success
+        end
+        
+        return false
+    end
+    
+    -- ============================================================
+    -- 🔄 CONTINUOUS MONITORING (Less aggressive)
+    -- ============================================================
+    
+    local function ${v.loop}()
+        spawn(function()
+            while wait(10) do -- Check every 10 seconds (less frequent)
+                local toolsFound = ${v.detect}()
+                if #toolsFound > 0 then
+                    local toolList = table.concat(toolsFound, ", ")
+                    warn("[🛡️ MONITOR] Tools detected:", toolList)
+                    ${v.kick}("Runtime tool detection: " .. toolList, toolsFound)
+                    break
+                end
+            end
+        end)
+    end
+    
+    -- Start monitoring
+    ${v.loop}()
+    
+    -- Return main function
+    return ${v.run}
+end)()
+
+-- Execute
+local ${v.result} = ${v.main} and ${v.main}()
+
+-- Cleanup
+${v.main} = nil
+collectgarbage("collect")
+`;
+
+    return protectedScript;
+}
+
+module.exports = {
+    generateProtectedScript,
+    generateChecksum,
+    randomVar
+};        const encoded = Buffer.from(chunk).toString('base64');
         scriptChunks.push(encoded);
     }
 
