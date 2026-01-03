@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: premium-loader
+    env: node
+    region: singapore  # Ganti sesuai lokasi terdekat
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SCRIPT_SOURCE_URL
+        sync: false  # Set manual di Render dashboard
+      - key: ADMIN_KEY
+        generateValue: true  # Auto-generate secure key
+      - key: WEBHOOK_URL
+        sync: false  # Optional
+    healthCheckPath: /api/health
