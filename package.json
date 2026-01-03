@@ -1,0 +1,27 @@
+{
+  "name": "premium-loader-secure",
+  "version": "4.0.0",
+  "description": "Premium Script Loader with Full Security Protection",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "^1.6.0",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "node-cache": "^5.1.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": ["roblox", "loader", "protection", "security"],
+  "author": "Premium Loader",
+  "license": "MIT"
+}
